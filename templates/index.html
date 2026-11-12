@@ -1,0 +1,664 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>FIFA World Cup 2026 — Odds</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --bg: #0d0d0f; --surface: #141417; --surface2: #1a1a1e; --border: #222228;
+      --text: #e8e8ec; --text-muted: #888896; --text-faint: #444450;
+      --green: #22c55e; --red: #ef4444; --blue: #3b82f6;
+      --yellow: #eab308; --orange: #f97316; --purple: #a855f7;
+    }
+    body { background: var(--bg); color: var(--text); font-family: 'JetBrains Mono', monospace; font-size: 13px; }
+
+    .shell { display: flex; min-height: 100vh; }
+
+    .sidebar {
+      width: 210px; min-height: 100vh; background: var(--surface);
+      border-right: 1px solid var(--border); padding: 1.5rem 1rem;
+      display: flex; flex-direction: column; gap: 0.75rem; flex-shrink: 0; position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    }
+    .brand-mark { font-size: 0.65rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; }
+    .brand-name { font-size: 1rem; font-weight: 700; margin-top: 0.2rem; }
+    .brand-sub  { font-size: 0.7rem; color: var(--text-muted); margin-top: 0.1rem; }
+
+    .sidebar-label { font-size: 0.65rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; margin-top: 0.75rem; margin-bottom: 0.3rem; }
+    .filter-btn {
+      display: block; width: 100%; text-align: left; background: none; border: 1px solid transparent;
+      padding: 0.3rem 0.55rem; border-radius: 4px; color: var(--text-muted); cursor: pointer;
+      font-family: inherit; font-size: 0.78rem; margin-bottom: 0.15rem; transition: all 0.12s;
+    }
+    .filter-btn:hover { color: var(--text); border-color: var(--border); }
+    .filter-btn.active { color: var(--blue); border-color: var(--blue); background: rgba(59,130,246,0.08); }
+
+    .sidebar-footer { margin-top: auto; font-size: 0.68rem; color: var(--text-faint); line-height: 1.7; padding-top: 1rem; border-top: 1px solid var(--border); }
+
+    .btn {
+      background: var(--surface); border: 1px solid var(--border); color: var(--text-muted);
+      padding: 0.35rem 0.85rem; border-radius: 4px; cursor: pointer; font-family: inherit; font-size: 0.78rem; transition: all 0.12s;
+    }
+    .btn:hover:not(:disabled) { color: var(--text); border-color: var(--text-muted); }
+    .btn:disabled { opacity: 0.4; cursor: default; }
+    .btn-primary { background: var(--blue); border-color: var(--blue); color: #fff; }
+    .btn-primary:hover:not(:disabled) { opacity: 0.85; color: #fff; }
+
+    .main { flex: 1; padding: 2rem 2.5rem; }
+
+    .page-header { margin-bottom: 1.5rem; }
+    .page-eyebrow { font-size: 0.65rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 0.3rem; }
+    .page-title { font-size: 1.5rem; font-weight: 700; }
+    .page-sub { color: var(--text-muted); margin-top: 0.3rem; font-size: 0.8rem; }
+
+    .toolbar { display: flex; align-items: center; gap: 0.75rem; margin-bottom: 1.25rem; flex-wrap: wrap; }
+    .toolbar input {
+      background: var(--surface); border: 1px solid var(--border); color: var(--text);
+      padding: 0.35rem 0.7rem; border-radius: 4px; font-family: inherit; font-size: 0.8rem; width: 200px;
+    }
+    .toolbar input:focus { outline: none; border-color: var(--blue); }
+    .count-tag { font-size: 0.72rem; color: var(--text-faint); }
+
+    .section-label {
+      font-size: 0.65rem; color: var(--text-faint); text-transform: uppercase;
+      letter-spacing: 0.1em; margin-bottom: 0.6rem; margin-top: 1.5rem;
+    }
+    .section-label:first-child { margin-top: 0; }
+
+    /* ---- Match card ---- */
+    .match-card { background: var(--surface); border: 1px solid var(--border); border-radius: 6px; margin-bottom: 0.6rem; overflow: hidden; transition: border-color 0.15s; }
+    .match-card:hover { border-color: #333340; }
+    .match-card.tbd { opacity: 0.5; }
+    .match-card.is-arb { border-color: var(--green) !important; box-shadow: 0 0 0 1px rgba(34,197,94,0.3); }
+    .match-card.is-near-arb { border-color: var(--yellow); }
+
+    .match-header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0.65rem 1rem; cursor: pointer; user-select: none; gap: 1rem;
+    }
+    .match-teams { font-size: 0.9rem; font-weight: 600; }
+    .match-vs { color: var(--text-faint); font-weight: 400; margin: 0 0.35rem; }
+    .match-time { font-size: 0.72rem; color: var(--text-muted); white-space: nowrap; }
+    .match-meta { display: flex; align-items: center; gap: 0.5rem; flex-shrink: 0; }
+
+    /* Badges */
+    .badge {
+      font-size: 0.6rem; padding: 0.12rem 0.45rem; border-radius: 3px;
+      font-weight: 600; letter-spacing: 0.05em; white-space: nowrap;
+    }
+    .badge-tbd    { background: rgba(234,179,8,0.15);  color: var(--yellow); border: 1px solid rgba(234,179,8,0.3); }
+    .badge-arb    { background: rgba(34,197,94,0.15);  color: var(--green);  border: 1px solid rgba(34,197,94,0.4); }
+    .badge-nearb  { background: rgba(234,179,8,0.1);   color: var(--yellow); border: 1px solid rgba(234,179,8,0.25); }
+    .badge-disc   { background: rgba(249,115,22,0.12); color: var(--orange); border: 1px solid rgba(249,115,22,0.3); }
+    .badge-books  { background: transparent; color: var(--text-faint); border: 1px solid var(--border); }
+
+    .chevron { font-size: 0.65rem; color: var(--text-faint); margin-left: 0.25rem; transition: transform 0.2s; }
+    .chevron.open { transform: rotate(180deg); }
+
+    /* Best odds row */
+    .best-odds-row { display: flex; border-top: 1px solid var(--border); }
+    .odds-cell {
+      flex: 1; padding: 0.5rem 1rem; border-right: 1px solid var(--border);
+      display: flex; flex-direction: column; gap: 0.1rem;
+    }
+    .odds-cell:last-child { border-right: none; }
+    .odds-label { font-size: 0.62rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.06em; }
+    .odds-val { font-size: 0.95rem; font-weight: 700; }
+    .odds-val.pos { color: var(--green); }
+    .odds-val.neg { color: var(--red); }
+    .odds-val.na  { color: var(--text-faint); font-size: 0.8rem; }
+    .odds-book { font-size: 0.65rem; color: var(--text-faint); }
+    .odds-disc { font-size: 0.62rem; color: var(--orange); margin-top: 0.05rem; }
+
+    /* Arb banner */
+    .arb-banner {
+      padding: 0.5rem 1rem; border-top: 1px solid var(--border);
+      background: rgba(34,197,94,0.06); display: flex; align-items: flex-start; gap: 1rem; flex-wrap: wrap;
+    }
+    .near-arb-banner {
+      padding: 0.5rem 1rem; border-top: 1px solid var(--border);
+      background: rgba(234,179,8,0.05); font-size: 0.75rem; color: var(--yellow);
+    }
+    .arb-label { font-size: 0.65rem; color: var(--green); text-transform: uppercase; letter-spacing: 0.08em; font-weight: 600; white-space: nowrap; }
+    .arb-detail { font-size: 0.72rem; color: var(--text-muted); }
+    .arb-stakes { font-size: 0.72rem; display: flex; gap: 1rem; flex-wrap: wrap; margin-top: 0.25rem; }
+    .arb-stake-item { color: var(--text-muted); }
+    .arb-stake-item strong { color: var(--green); }
+
+    /* Book breakdown table */
+    .book-table-wrap { display: none; border-top: 1px solid var(--border); padding: 0.65rem 1rem; overflow-x: auto; }
+    .book-table-wrap.open { display: block; }
+    table { width: 100%; border-collapse: collapse; font-size: 0.77rem; }
+    th { text-align: left; color: var(--text-faint); font-weight: 500; padding: 0.25rem 0.6rem; border-bottom: 1px solid var(--border); }
+    td { padding: 0.28rem 0.6rem; border-bottom: 1px solid rgba(255,255,255,0.03); }
+    tr:last-child td { border-bottom: none; }
+    .best-cell { color: var(--green); }
+
+    /* Show more */
+    .show-more-btn {
+      display: block; width: 100%; padding: 0.6rem; text-align: center;
+      background: var(--surface); border: 1px dashed var(--border); border-radius: 6px;
+      color: var(--text-muted); cursor: pointer; font-family: inherit; font-size: 0.8rem;
+      margin-top: 0.5rem; margin-bottom: 1rem; transition: all 0.15s;
+    }
+    .show-more-btn:hover { color: var(--text); border-color: var(--text-muted); }
+
+    .banner { padding: 0.65rem 1rem; border-radius: 5px; margin-bottom: 1.25rem; font-size: 0.8rem; }
+    .banner.error { background: rgba(239,68,68,0.1); border: 1px solid rgba(239,68,68,0.3); color: #fca5a5; }
+
+    .empty-state { text-align: center; padding: 4rem 2rem; color: var(--text-muted); }
+    .empty-state .big { font-size: 2rem; color: var(--text-faint); margin-bottom: 1rem; }
+
+    .watch-btn.watching { color: var(--yellow); border-color: var(--yellow); background: rgba(234,179,8,0.08); }
+    .watch-btn.watching::before { content: "★ "; }
+
+    .watch-list-item {
+      font-size: 0.72rem; color: var(--text-muted); padding: 0.3rem 0;
+      border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; gap: 0.5rem;
+    }
+    .watch-list-item:last-child { border-bottom: none; }
+    .watch-list-item .wl-teams { flex: 1; }
+    .watch-list-item .wl-status { font-size: 0.65rem; white-space: nowrap; }
+    .watch-list-item .wl-status.arb { color: var(--green); font-weight: 600; }
+    .watch-list-item .wl-status.nearb { color: var(--yellow); }
+    .watch-list-item .wl-remove { cursor: pointer; color: var(--text-faint); font-size: 0.7rem; }
+    .watch-list-item .wl-remove:hover { color: var(--red); }
+
+    @keyframes arb-pulse {
+      0%, 100% { box-shadow: 0 0 0 1px rgba(34,197,94,0.3); }
+      50% { box-shadow: 0 0 12px 3px rgba(34,197,94,0.5); }
+    }
+    .match-card.arb-alert { animation: arb-pulse 1.5s ease-in-out infinite; }
+  </style>
+</head>
+<body>
+<div class="shell">
+
+  <nav class="sidebar">
+    <div>
+      <div class="brand-mark">// Odds Tracker</div>
+      <div class="brand-name">{{ sports[sport_id].short }}</div>
+      <div class="brand-sub">Ontario, Canada</div>
+    </div>
+
+    <div>
+      <div class="sidebar-label">Sport</div>
+      {% for sid, s in sports.items() %}
+      <a href="/?sport={{ sid }}" class="filter-btn {% if sid == sport_id %}active{% endif %}" style="text-decoration:none;">
+        {{ s.short }}{% if s.get('offseason') %} <span style="font-size:0.58rem;color:var(--text-faint);">off-season</span>{% endif %}
+      </a>
+      {% endfor %}
+    </div>
+
+    <div>
+      <div class="sidebar-label">Show</div>
+      <button class="filter-btn active" onclick="setFilter('all', this)">All matches</button>
+      <button class="filter-btn" onclick="setFilter('upcoming', this)">Upcoming only</button>
+      <button class="filter-btn" onclick="setFilter('tbd', this)">TBD matchups</button>
+    </div>
+
+    <div>
+      <div class="sidebar-label">Highlight</div>
+      <button class="filter-btn" onclick="setFilter('arb', this)">Arb opportunities</button>
+      <button class="filter-btn" onclick="setFilter('nearb', this)">Near-arb (&lt;1.5%)</button>
+      <button class="filter-btn" onclick="setFilter('disc', this)">Line discrepancies</button>
+    </div>
+
+    <div>
+      <div class="sidebar-label">Watching</div>
+      <div id="watch-list-empty" style="font-size:0.72rem; color:var(--text-faint);">No matches watched yet.</div>
+      <div id="watch-list"></div>
+    </div>
+
+    <div class="sidebar-footer">
+      {% if fetched_at %}<div>Updated: {{ fetched_at }}</div>{% endif %}
+      {% if quota_remaining %}<div>API quota left: {{ quota_remaining }}</div>{% endif %}
+      <div style="font-size:0.65rem; color:var(--text-faint); margin-top:0.3rem;" id="poll-status"></div>
+      <button class="btn" id="refresh-btn" onclick="refreshOdds()" style="width:100%; margin-top:0.6rem; font-size:0.7rem;">&#8635; Refresh</button>
+    </div>
+  </nav>
+
+  <main class="main">
+    <div class="page-header">
+      <div class="page-eyebrow">// {{ sports[sport_id].label }}</div>
+      <h1 class="page-title">Betting Odds</h1>
+      <p class="page-sub">
+        {% if sports[sport_id].has_draw %}1X2 moneyline{% else %}Moneyline (H2H){% endif %}
+        — Ontario/Canada licensed bookmakers — best odds highlighted ★
+      </p>
+    </div>
+
+    {% if is_offseason %}
+    <div style="background:var(--surface); border:1px solid var(--border); border-radius:6px; padding:2rem; margin-bottom:1.5rem; max-width:640px;">
+      <div style="font-size:0.65rem; color:var(--text-faint); text-transform:uppercase; letter-spacing:0.1em; margin-bottom:0.5rem;">// Off-season</div>
+      <div style="font-size:1.1rem; font-weight:700; margin-bottom:0.6rem;">{{ sports[sport_id].label }} — No Active Lines</div>
+      <p style="color:var(--text-muted); font-size:0.82rem; line-height:1.7;">{{ sports[sport_id].offseason_msg }}</p>
+      <p style="color:var(--text-faint); font-size:0.75rem; margin-top:0.75rem;">This page will automatically show odds and arb opportunities the moment lines go live. Everything is set up — just check back closer to the season.</p>
+    </div>
+    {% elif error %}
+    <div class="banner error">{{ error }}</div>
+    {% endif %}
+
+    <div class="toolbar">
+      <input type="text" id="team-search" placeholder="Search team..." oninput="applyFilters()">
+      <span class="count-tag" id="match-count"></span>
+    </div>
+
+    <!-- Upcoming matches -->
+    <div id="section-upcoming">
+      {% if upcoming %}
+      <div class="section-label" id="label-upcoming">Upcoming matches ({{ upcoming | length }})</div>
+
+      {% for m in upcoming %}
+      {% set has_arb   = m.arb and m.arb.is_arb %}
+      {% set has_nearb = m.arb and m.arb.is_near_arb %}
+      {% set has_disc  = m.discrepancies | length > 0 %}
+      <div class="match-card {% if has_arb %}is-arb{% elif has_nearb %}is-near-arb{% endif %}"
+           data-type="upcoming"
+           data-arb="{{ 'true' if has_arb else 'false' }}"
+           data-nearb="{{ 'true' if has_nearb else 'false' }}"
+           data-disc="{{ 'true' if has_disc else 'false' }}"
+           data-teams="{{ m.home | lower }} {{ m.away | lower }}"
+           {% if loop.index > 10 %}style="display:none;" data-hidden="true"{% endif %}>
+
+        <div class="match-header" onclick="toggleCard(this)">
+          <div style="display:flex;align-items:center;gap:0.6rem;flex-wrap:wrap;">
+            <span class="match-teams">{{ m.home }} <span class="match-vs">vs</span> {{ m.away }}</span>
+            {% if has_arb   %}<span class="badge badge-arb">ARB</span>{% endif %}
+            {% if has_nearb %}<span class="badge badge-nearb">NEAR-ARB</span>{% endif %}
+            {% if has_disc  %}<span class="badge badge-disc">LINE GAP</span>{% endif %}
+          </div>
+          <div class="match-meta">
+            <span class="match-time">{{ m.commence_display }}</span>
+            <span class="badge badge-books">{{ m.n_books }} books</span>
+            <span class="chevron">&#9660;</span>
+          </div>
+        </div>
+
+        <!-- Best odds summary -->
+        <div class="best-odds-row">
+          {% for label, val, book, disc_key in [
+              (m.home, m.best_home, m.best_home_book, "home"),
+              ("Draw",  m.best_draw, m.best_draw_book, "draw"),
+              (m.away, m.best_away, m.best_away_book, "away")
+          ] %}
+          <div class="odds-cell">
+            <div class="odds-label">{{ label }}</div>
+            {% if val is not none %}
+              <div class="odds-val {{ 'pos' if val >= 0 else 'neg' }}">{{ '+' if val >= 0 else '' }}{{ val }}</div>
+              <div class="odds-book">{{ book }}</div>
+              {% if disc_key in m.discrepancies %}
+              <div class="odds-disc">&#9650; {{ m.discrepancies[disc_key] }}% spread across books</div>
+              {% endif %}
+            {% else %}
+              <div class="odds-val na">—</div>
+              <div class="odds-book">no line</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+
+        <!-- Arb / near-arb banner -->
+        {% if has_arb and m.arb.stakes %}
+        <div class="arb-banner">
+          <div style="flex:1;">
+            <div class="arb-label">&#10003; Arbitrage Opportunity — {{ m.arb.arb_pct }}% guaranteed return</div>
+            <div class="arb-detail">Implied book: {{ m.arb.total_implied_pct }}% &nbsp;|&nbsp; Profit on ${{ m.arb.stakes.total }}: <strong style="color:var(--green)">${{ m.arb.stakes.profit }}</strong></div>
+            <div class="arb-stakes">
+              {% for leg, stake in m.arb.stakes.stakes.items() %}
+              <div class="arb-stake-item">{{ leg | title }}: <strong>${{ stake }}</strong></div>
+              {% endfor %}
+            </div>
+          </div>
+          <button class="watch-btn btn" data-id="{{ m.id }}" data-home="{{ m.home }}" data-away="{{ m.away }}" onclick="toggleWatch(this)" style="font-size:0.7rem; align-self:center;">&#9711; Watch</button>
+        </div>
+        {% elif has_nearb %}
+        <div class="near-arb-banner" style="display:flex; align-items:center; justify-content:space-between; gap:1rem;">
+          <span>Near-arb: implied book {{ m.arb.total_implied_pct }}% &nbsp;({{ m.arb.arb_pct }}% from arb). Line move could push this into arb territory.</span>
+          <button class="watch-btn btn" data-id="{{ m.id }}" data-home="{{ m.home }}" data-away="{{ m.away }}" onclick="toggleWatch(this)" style="font-size:0.7rem; white-space:nowrap; flex-shrink:0;">&#9711; Watch</button>
+        </div>
+        {% endif %}
+
+        <!-- Per-book breakdown (collapsed) -->
+        <div class="book-table-wrap">
+          <table>
+            <thead>
+              <tr><th>Bookmaker</th><th>{{ m.home }}</th><th>Draw</th><th>{{ m.away }}</th></tr>
+            </thead>
+            <tbody>
+              {% for key, book in m.books %}
+              <tr>
+                <td>{{ book.title }}</td>
+                <td class="{{ 'best-cell' if book.home == m.best_home else '' }}">
+                  {{ ('+' if book.home >= 0 else '') ~ book.home if book.home is not none else '—' }}
+                  {% if book.home == m.best_home %} ★{% endif %}
+                </td>
+                <td class="{{ 'best-cell' if book.draw == m.best_draw else '' }}">
+                  {{ ('+' if book.draw >= 0 else '') ~ book.draw if book.draw is not none else '—' }}
+                  {% if book.draw == m.best_draw %} ★{% endif %}
+                </td>
+                <td class="{{ 'best-cell' if book.away == m.best_away else '' }}">
+                  {{ ('+' if book.away >= 0 else '') ~ book.away if book.away is not none else '—' }}
+                  {% if book.away == m.best_away %} ★{% endif %}
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      {% endfor %}
+
+      {% if upcoming | length > 10 %}
+      <button class="show-more-btn" id="show-more-btn" onclick="showMore()">
+        Show {{ upcoming | length - 10 }} more matches &#9660;
+      </button>
+      {% endif %}
+
+      {% endif %}
+    </div>
+
+    <!-- TBD matchups -->
+    <div id="section-tbd">
+      {% if tbd %}
+      <div class="section-label" id="label-tbd">TBD matchups — awaiting confirmation ({{ tbd | length }})</div>
+      {% for m in tbd %}
+      <div class="match-card tbd" data-type="tbd" data-arb="false" data-nearb="false" data-disc="false"
+           data-teams="{{ m.home | lower }} {{ m.away | lower }}">
+        <div class="match-header" onclick="toggleCard(this)">
+          <div style="display:flex;align-items:center;gap:0.6rem;">
+            <span class="match-teams">{{ m.home }} <span class="match-vs">vs</span> {{ m.away }}</span>
+            <span class="badge badge-tbd">TBD</span>
+          </div>
+          <div class="match-meta">
+            <span class="match-time">{{ m.commence_display }}</span>
+            {% if m.books %}<span class="chevron">&#9660;</span>{% endif %}
+          </div>
+        </div>
+        {% if m.books %}
+        <div class="best-odds-row">
+          {% for label, val, book in [(m.home, m.best_home, m.best_home_book), ("Draw", m.best_draw, m.best_draw_book), (m.away, m.best_away, m.best_away_book)] %}
+          <div class="odds-cell">
+            <div class="odds-label">{{ label }}</div>
+            {% if val is not none %}
+              <div class="odds-val {{ 'pos' if val >= 0 else 'neg' }}">{{ '+' if val >= 0 else '' }}{{ val }}</div>
+              <div class="odds-book">{{ book }}</div>
+            {% else %}
+              <div class="odds-val na">—</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        <div class="book-table-wrap">
+          <table>
+            <thead><tr><th>Bookmaker</th><th>{{ m.home }}</th><th>Draw</th><th>{{ m.away }}</th></tr></thead>
+            <tbody>
+              {% for key, book in m.books %}
+              <tr>
+                <td>{{ book.title }}</td>
+                <td>{{ ('+' if book.home >= 0 else '') ~ book.home if book.home is not none else '—' }}</td>
+                <td>{{ ('+' if book.draw >= 0 else '') ~ book.draw if book.draw is not none else '—' }}</td>
+                <td>{{ ('+' if book.away >= 0 else '') ~ book.away if book.away is not none else '—' }}</td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+        {% endif %}
+      </div>
+      {% endfor %}
+      {% endif %}
+    </div>
+
+    {% if not upcoming and not tbd and not error %}
+    <div class="empty-state">
+      <div class="big">--</div>
+      <p>No matches found. Odds may not be posted yet for this tournament.</p>
+    </div>
+    {% endif %}
+  </main>
+</div>
+
+<script>
+let activeFilter = "all";
+let allShown = false;
+
+function toggleCard(header) {
+  const wrap = header.closest(".match-card").querySelector(".book-table-wrap");
+  const chev = header.querySelector(".chevron");
+  if (!wrap) return;
+  const open = wrap.classList.toggle("open");
+  if (chev) chev.classList.toggle("open", open);
+}
+
+function setFilter(f, btn) {
+  activeFilter = f;
+  document.querySelectorAll(".filter-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  applyFilters();
+}
+
+function showMore() {
+  document.querySelectorAll(".match-card[data-hidden='true']").forEach(c => {
+    c.style.display = "";
+    c.removeAttribute("data-hidden");
+  });
+  document.getElementById("show-more-btn")?.remove();
+  allShown = true;
+  applyFilters();
+}
+
+function applyFilters() {
+  const q = document.getElementById("team-search").value.trim().toLowerCase();
+  const cards = document.querySelectorAll(".match-card");
+  let visible = 0;
+
+  cards.forEach(card => {
+    if (card.dataset.hidden === "true") return; // respect collapsed state until shown
+    const type   = card.dataset.type;
+    const teams  = card.dataset.teams || "";
+    const isArb  = card.dataset.arb === "true";
+    const isNearb= card.dataset.nearb === "true";
+    const isDisc = card.dataset.disc === "true";
+
+    const teamOk = !q || teams.includes(q);
+    let filterOk = false;
+    switch (activeFilter) {
+      case "all":      filterOk = true; break;
+      case "upcoming": filterOk = type === "upcoming"; break;
+      case "tbd":      filterOk = type === "tbd"; break;
+      case "arb":      filterOk = isArb; break;
+      case "nearb":    filterOk = isArb || isNearb; break;
+      case "disc":     filterOk = isDisc; break;
+    }
+
+    const show = teamOk && filterOk;
+    card.style.display = show ? "" : "none";
+    if (show) visible++;
+  });
+
+  document.getElementById("match-count").textContent = `${visible} match${visible !== 1 ? "es" : ""}`;
+
+  // Show/hide section labels
+  ["upcoming", "tbd"].forEach(t => {
+    const label = document.getElementById("label-" + t);
+    if (!label) return;
+    const sec = document.getElementById("section-" + t);
+    const any = sec && [...sec.querySelectorAll(".match-card")].some(c => c.style.display !== "none");
+    if (label) label.style.display = any ? "" : "none";
+  });
+}
+
+async function refreshOdds() {
+  const btn = document.getElementById("refresh-btn");
+  btn.textContent = "Refreshing...";
+  btn.disabled = true;
+  try {
+    const r = await fetch("/refresh");
+    const d = await r.json();
+    if (d.ok) { window.location.reload(); }
+    else {
+      alert("Error: " + d.error);
+      btn.textContent = "↻ Refresh";
+      btn.disabled = false;
+    }
+  } catch {
+    alert("Network error.");
+    btn.textContent = "↻ Refresh";
+    btn.disabled = false;
+  }
+}
+
+applyFilters();
+
+// ── Watch & Poll ──────────────────────────────────────────────────────────
+const POLL_INTERVAL_MS = 5 * 60 * 1000; // 5 min (matches server cache TTL)
+const STORAGE_KEY = "wc_watched";
+
+function loadWatched() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}"); } catch { return {}; }
+}
+function saveWatched(w) { localStorage.setItem(STORAGE_KEY, JSON.stringify(w)); }
+
+function toggleWatch(btn) {
+  const id = btn.dataset.id;
+  const home = btn.dataset.home;
+  const away = btn.dataset.away;
+  const watched = loadWatched();
+  if (watched[id]) {
+    delete watched[id];
+  } else {
+    watched[id] = { home, away, status: "nearb", arb_pct: null };
+    requestNotificationPermission();
+  }
+  saveWatched(watched);
+  renderWatchList();
+  syncWatchButtons();
+}
+
+function syncWatchButtons() {
+  const watched = loadWatched();
+  document.querySelectorAll(".watch-btn").forEach(btn => {
+    const watching = !!watched[btn.dataset.id];
+    btn.classList.toggle("watching", watching);
+    btn.textContent = watching ? "Watching" : "Watch";
+    if (watching) btn.insertAdjacentText("afterbegin", "★ ");
+  });
+  // fix double-prefix
+  document.querySelectorAll(".watch-btn.watching").forEach(btn => {
+    btn.textContent = "★ Watching";
+  });
+}
+
+function renderWatchList() {
+  const watched = loadWatched();
+  const list = document.getElementById("watch-list");
+  const empty = document.getElementById("watch-list-empty");
+  const ids = Object.keys(watched);
+  empty.style.display = ids.length ? "none" : "";
+  list.innerHTML = ids.map(id => {
+    const m = watched[id];
+    const statusClass = m.status === "arb" ? "arb" : "nearb";
+    const statusText = m.status === "arb"
+      ? `ARB +${m.arb_pct}%`
+      : m.arb_pct != null ? `${m.arb_pct}% away` : "watching";
+    return `<div class="watch-list-item">
+      <span class="wl-teams">${m.home} vs ${m.away}</span>
+      <span class="wl-status ${statusClass}">${statusText}</span>
+      <span class="wl-remove" onclick="removeWatch('${id}')" title="Stop watching">✕</span>
+    </div>`;
+  }).join("");
+}
+
+function removeWatch(id) {
+  const watched = loadWatched();
+  delete watched[id];
+  saveWatched(watched);
+  renderWatchList();
+  syncWatchButtons();
+}
+
+async function pollWatched() {
+  const watched = loadWatched();
+  const ids = Object.keys(watched);
+  if (!ids.length) return;
+
+  document.getElementById("poll-status").textContent = "Polling...";
+  try {
+    const resp = await fetch("/poll?ids=" + ids.join(","));
+    const data = await resp.json();
+    const updated = loadWatched();
+    let newArbs = [];
+
+    for (const [id, m] of Object.entries(data.matches)) {
+      const prev = updated[id];
+      if (!prev) continue;
+      const wasArb = prev.status === "arb";
+      updated[id] = {
+        ...prev,
+        status: m.is_arb ? "arb" : "nearb",
+        arb_pct: m.arb_pct,
+      };
+      if (!wasArb && m.is_arb) {
+        newArbs.push({ id, home: m.home, away: m.away, arb_pct: m.arb_pct, stakes: m.stakes });
+      }
+      // Update the card on the page if visible
+      const card = document.querySelector(`.match-card[data-id="${id}"]`);
+      if (card && m.is_arb) {
+        card.classList.add("is-arb", "arb-alert");
+        card.classList.remove("is-near-arb");
+      }
+    }
+
+    saveWatched(updated);
+    renderWatchList();
+
+    if (newArbs.length) fireArbAlerts(newArbs);
+    document.getElementById("poll-status").textContent = `Last checked: ${data.fetched_at}`;
+  } catch {
+    document.getElementById("poll-status").textContent = "Poll failed.";
+  }
+}
+
+function fireArbAlerts(arbs) {
+  arbs.forEach(m => {
+    const msg = `ARB ALERT: ${m.home} vs ${m.away} — ${m.arb_pct}% guaranteed return`;
+    if (Notification.permission === "granted") {
+      const n = new Notification("⚡ Arb Opportunity Found", {
+        body: msg + (m.stakes ? `\nProfit on $${m.stakes.total}: $${m.stakes.profit}` : ""),
+        icon: "",
+        tag: m.id,
+      });
+      n.onclick = () => { window.focus(); n.close(); };
+    }
+    // Also show an in-page banner
+    const banner = document.createElement("div");
+    banner.style.cssText = "position:fixed;top:1rem;right:1rem;background:#052e16;border:1px solid var(--green);color:var(--green);padding:0.75rem 1rem;border-radius:6px;font-size:0.8rem;z-index:9999;max-width:320px;box-shadow:0 4px 20px rgba(0,0,0,0.5);";
+    banner.innerHTML = `<strong>⚡ ARB FOUND</strong><br>${m.home} vs ${m.away}<br>${m.arb_pct}% return${m.stakes ? ` — $${m.stakes.profit} profit on $${m.stakes.total}` : ""}<br><span style="font-size:0.65rem;opacity:0.6;cursor:pointer;" onclick="this.parentElement.remove()">dismiss</span>`;
+    document.body.appendChild(banner);
+    setTimeout(() => banner.remove(), 30000);
+  });
+}
+
+function requestNotificationPermission() {
+  if ("Notification" in window && Notification.permission === "default") {
+    Notification.requestPermission();
+  }
+}
+
+// Add data-id to match cards so polling can find them
+document.querySelectorAll(".match-card[data-type]").forEach(card => {
+  // id is embedded in the watch button inside the card
+  const btn = card.querySelector(".watch-btn");
+  if (btn) card.dataset.id = btn.dataset.id;
+});
+
+// Init
+renderWatchList();
+syncWatchButtons();
+setInterval(pollWatched, POLL_INTERVAL_MS);
+</script>
+</body>
+</html>

@@ -1,0 +1,12 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+# Secrets - never commit
+.env
+local_secrets.py
+# Local tooling
+.claude/
+.cache/
